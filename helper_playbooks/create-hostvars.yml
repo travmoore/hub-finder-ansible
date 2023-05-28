@@ -1,0 +1,14 @@
+# A simple playbook to help create the interface exemption vars for each host.
+---
+    - name: Create Hostvars files from template
+      hosts: asw
+      vars:
+        ansible_connection: local
+      tasks:
+      - name: Create a hostvars directories
+        file:
+          path: "./host_vars/{{inventory_hostname}}"
+          state: directory
+
+      -  template: src=j2_templates/create_hostvars.j2
+                   dest=host_vars/{{inventory_hostname}}/interface_exemption-base.yaml

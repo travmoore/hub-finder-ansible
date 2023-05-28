@@ -1,0 +1,15 @@
+#jinja2: trim_blocks: True
+---
+
+host_list:
+{% for host,facts in allhosts|dictsort %}
+{% if 'asw' in facts.group_names %}
+  - hostname: {{facts.inventory_hostname}}
+    is_compliant: {{facts.interface_compliance.get('mac-summary').is_compliant}}
+    hub_count: {{facts.interface_compliance.get('non-compliant').count}}
+    hub_interfaces:
+{% for iface in facts.interface_compliance.get('non-compliant').list %}
+      - {{iface}}
+{% endfor %}
+{% endif %}
+{% endfor %}

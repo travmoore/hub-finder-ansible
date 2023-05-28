@@ -1,0 +1,14 @@
+---
+all:
+  children:
+
+################################################
+##### Inventory Groups By Network Function #####
+################################################
+
+    asw:
+      hosts:
+        example_asw1:
+          ansible_host: 10.0.1.1
+        example_asw2:
+          ansible_host: 10.0.2.1

@@ -1,0 +1,23 @@
+#jinja2: trim_blocks: True
+***Network Compliance Report***
+
+There are currently {{compliance_report.hub_total}} interfaces that may have un-managed switches connected.
+
+Non-compliant devices and interfaces:
+{%for host in compliance_report.non_comp%}
+  - hostname: {{host.hostname}}
+    interfaces:
+{%for intf in host.hub_interfaces%}
+      - {{intf}}
+{%endfor%}
+
+{%endfor%}
+
+The Following device were also evaluated and have no current issues:
+
+{%for host in compliance_report.compliant%}
+  - hostname: {{host.hostname}}
+{%endfor%}
+
+
+
