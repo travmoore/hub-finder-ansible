@@ -1,0 +1,8 @@
+---
+
+network_exempt:
+- META:
+  - Example Port Config for template
+  NETWORK-EXEMPT: false
+  PORT: te9/99
+  USER-EXCEPTION: false

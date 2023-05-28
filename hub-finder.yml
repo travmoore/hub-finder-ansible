@@ -1,0 +1,86 @@
+---
+# The first play will login to network switches, run show commands and store that data as structured data using 
+# custom python parser functions available in the filter_plugins directory
+- name: Collect, Parse and Store Switch Data With Show Commands
+  hosts: asw
+  tasks:
+   - include_vars:
+      file: host_vars/{{inventory_hostname}}/interface_exemption.yaml
+      name: interface_exempt
+
+   - ios_command:
+        commands:
+          - "show power inline"
+          - "show cdp neighbors"
+          - "show interfaces status"
+          - "show mac address-table"
+
+     register: show_command_results
+
+   - set_fact:
+      int_pow: "{{show_command_results.stdout[0] | parse_cli_textfsm('fsm_temps/cisco_ios_show_power_inline-all.template')}}"
+      int_cdp: "{{show_command_results.stdout[1] | parse_cli_textfsm('fsm_temps/cisco_ios_show_cdp_neighbors.template') | cdp_int_replace}}"
+      int_stat: "{{show_command_results.stdout[2] | parse_cli_textfsm('fsm_temps/cisco_ios_show_interfaces_status.template')}}"
+      int_mac: "{{show_command_results.stdout[3] | parse_cli_textfsm('fsm_temps/cisco_ios_show_mac-address-table.template') | mac_port_shorten}}"
+
+   - set_fact: 
+      all_int_facts: "{{int_pow | consolidate_int_facts_exempt(int_cdp, int_stat, int_mac, interface_exempt.network_exempt)}}"
+
+   - name: Create Directory for File
+     file:
+      path: ./structured_output
+      state: directory
+
+   - name: Write Parsed and Structured Output to File
+     copy: content="{{all_int_facts | to_nice_yaml (indent=4)}}" dest=structured_output/all_int_facts_{{inventory_hostname}}.yml
+ 
+   - set_fact:
+      interface_compliance: "{{ all_int_facts | int_comply}}"
+
+#This task is not required but is useful for validating the accuracy of the final report and investigating the connected devices on each port.
+   - name: Write Parsed and Structured Output to File Per Host
+     copy: content="{{interface_compliance}}" dest=reports/ICR_{{inventory_hostname}}.json 
+
+   - name: Consolidate Host Info into One Yaml File with J2 template
+     template:
+      src: j2_templates/hub-yaml.j2
+      dest: reports/final_host_data.yml
+      
+     vars:
+       allhosts: "{{hostvars}}"
+
+     run_once: true
+
+#Play 2 will generate the final report on number of un-managed switches and switchport policy compliance.
+- name: Generate Final Report
+  hosts: localhost
+
+  tasks:
+  - include_vars:
+      file: reports/final_host_data.yml
+      name: report_data
+  - set_fact:
+      compliance_report : "{{ report_data.host_list | report_builder }}" 
+
+  - debug:
+      msg: "{{compliance_report}}"
+
+  - name: Create Final Report From Template
+    template:
+      src: j2_templates/final_report.j2
+      dest: reports/final_report.txt
+
+# Play 3 will send the completed report via email.
+- name: Send Email Notification
+  hosts: localhost
+  gather_facts: no
+  tasks:
+  - mail:
+      host: example.email.com
+      port: 25
+      to: network-team@email.com
+      subject: Hub Finder Compliance Report
+      body: "{{ lookup('file', 'reports/final_report.txt') }}"
+      from: HubFinder-ComplianceReport
+    delegate_to: localhost
+    run_once: True

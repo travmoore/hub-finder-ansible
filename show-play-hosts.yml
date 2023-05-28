@@ -1,0 +1,8 @@
+---
+- name: Print Inventory Hostname For hosts that this playbook will act on 
+  hosts: asw
+  vars:
+    ansible_connection: local
+  tasks:
+  - debug:
+      msg: 'This will play will act on {{inventory_hostname}}'

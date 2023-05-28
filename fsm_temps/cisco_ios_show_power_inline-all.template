@@ -1,0 +1,14 @@
+Value INTF ([Gi|Fa]\S+)
+Value ADMIN (\S+)
+Value OPER (on|off)
+Value FROM_PS (\S+)
+Value POWER (\S+)
+Value DEVICE (\S.*?)
+Value CLASS (n\/a|\d)
+Value MAX (\d\d\.\d)
+
+Start
+  ^${INTF}\s+${ADMIN}\s+${OPER}\s+${FROM_PS}\s+${POWER}\s+${DEVICE}\s+${CLASS}\s*$$ -> Record
+  ^${INTF}\s+${ADMIN}\s+${OPER}\s+${POWER}\s+${DEVICE}\s+${CLASS}\s+${MAX} -> Record
+  # ^\s*
+  # ^. -> Error
