@@ -1,3 +1,4 @@
+# A simple playbook to help create the interface exemption vars for each host.
 ---
     - name: Create Hostvars files from template
       hosts: asw
